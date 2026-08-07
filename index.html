@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>十二时辰经络运行助手</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --s0:#f5f5f3;--s1:#efefec;--s2:#ffffff;
+  --tp:#1a1a18;--ts:#5f5e5a;--tm:#888780;
+  --bd:#e0dfd8;--bds:#c0bfb8;--bda:#378add;
+  --bga:#e6f1fb;--ta:#185fa5;--fa:#378add;--oa:#fff;
+  --bgsuc:#eaf3de;--tsuc:#3b6d11;--bdsuc:#639922;
+  --bgwrn:#faeeda;--twrn:#854f0b;--bdwrn:#ef9f27;
+  --tdng:#a32d2d;--r:8px;
+  --font:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',Arial,sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --s0:#1c1c1a;--s1:#252523;--s2:#2e2e2b;
+  --tp:#f0efe8;--ts:#a8a79f;--tm:#6a6a64;
+  --bd:#3a3a36;--bds:#525250;
+  --bga:#0c3a5c;--ta:#85b7eb;
+  --bgsuc:#1a2e0a;--tsuc:#97c459;--bdsuc:#3b6d11;
+  --bgwrn:#2e1f06;--twrn:#ef9f27;--bdwrn:#854f0b;
+  --tdng:#f09595;
+}}
+html,body{min-height:100%;background:var(--s0);font-family:var(--font);color:var(--tp)}
+.app{max-width:480px;margin:0 auto;padding:12px}
+.hdr{text-align:center;padding:8px 0 12px}
+.hdr-t{font-size:17px;font-weight:500}
+.hdr-s{font-size:11px;color:var(--tm);margin-top:2px}
+.tabs{display:flex;gap:5px;margin-bottom:12px;background:var(--s1);border-radius:var(--r);padding:4px}
+.tab{flex:1;padding:8px 4px;border:none;background:transparent;border-radius:6px;font-size:12px;font-weight:500;color:var(--ts);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;-webkit-tap-highlight-color:transparent;font-family:var(--font)}
+.tab.on{background:var(--s2);color:var(--tp);border:0.5px solid var(--bd)}
+.pg{display:none}.pg.on{display:block}
+
+.banner{border-radius:12px;padding:24px 16px 16px;margin-bottom:11px;text-align:center}
+.bcode{font-size:54px;font-weight:900;color:#000;letter-spacing:3px;line-height:1;font-variant-numeric:tabular-nums}
+.bsub{font-size:12px;color:rgba(255,255,255,0.88);margin-top:8px}
+.obtn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;padding:9px;background:rgba(255,255,255,0.15);border:0.5px solid rgba(255,255,255,0.3);border-radius:var(--r);color:#fff;font-size:13px;font-weight:500;text-decoration:none;-webkit-tap-highlight-color:transparent}
+
+.clk{background:var(--s2);border:0.5px solid var(--bd);border-radius:var(--r);padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.clk-n{font-size:22px;font-weight:500;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.clk-r{text-align:right}
+.clk-s{font-size:13px;color:var(--ts)}
+.clk-d{font-size:11px;color:var(--tm);margin-top:2px}
+
+.ntf{background:var(--bgwrn);border:0.5px solid var(--bdwrn);border-radius:var(--r);padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ntf.ok{background:var(--bgsuc);border-color:var(--bdsuc)}
+.ntf-t{font-size:12px;flex:1}
+.ntf-b{font-size:11px;font-weight:500;color:var(--twrn);white-space:nowrap}
+.ntf.ok .ntf-b{color:var(--tsuc)}
+
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:6px 11px;border-radius:20px;border:0.5px solid var(--bd);background:var(--s2);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}
+.chip.on{border-color:var(--fa);background:var(--bga)}
+.chip-s{font-size:11px;font-weight:500;color:var(--tp)}
+.chip-j{font-size:10px;color:var(--tm);margin-top:1px}
+.chip.on .chip-s,.chip.on .chip-j{color:var(--ta)}
+
+.mcard{background:var(--s2);border:0.5px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px}
+.mhdr{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.mico{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.mttl{flex:1;min-width:0}
+.mname{font-size:17px;font-weight:500}
+.mzf{font-size:12px;color:var(--ts);margin-top:2px}
+.mtime{font-size:11px;color:var(--tm);margin-top:1px}
+.mbadge{font-size:11px;padding:3px 9px;border-radius:10px;font-weight:500;white-space:nowrap}
+.b-now{background:var(--bgsuc);color:var(--tsuc)}
+.b-next{background:var(--bgwrn);color:var(--twrn)}
+.b-else{background:var(--s1);color:var(--tm);border:0.5px solid var(--bd)}
+
+.twrap{display:flex;align-items:center;gap:14px;margin-bottom:11px;padding:11px;background:var(--s0);border-radius:var(--r)}
+.tring{position:relative;width:66px;height:66px;flex-shrink:0}
+.tring svg{transform:rotate(-90deg)}
+.ttext{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.thm{font-size:13px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+.tlb{font-size:9px;color:var(--tm);margin-top:2px}
+.tinfo{flex:1}
+.tilb{font-size:11px;color:var(--tm);margin-bottom:5px}
+.pbar{height:4px;background:var(--s1);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.pfill{height:100%;border-radius:2px;transition:width .8s linear}
+.tpct{font-size:11px;color:var(--tm)}
+
+.ab{background:var(--s0);border-radius:var(--r);padding:9px 11px;margin-bottom:7px;border-left:2.5px solid}
+.albl{font-size:11px;font-weight:500;color:var(--ts);margin-bottom:4px}
+.atxt{font-size:12px;line-height:1.6}
+
+.brow{display:flex;gap:7px;margin-top:11px}
+.btn{flex:1;padding:9px 10px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--bds);background:transparent;color:var(--tp);display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;-webkit-tap-highlight-color:transparent;font-family:var(--font)}
+.btn:active{opacity:.75}
+.btn-p{background:var(--fa);border-color:var(--fa);color:var(--oa)}
+.btn-d{border-color:var(--tdng);color:var(--tdng)}
+
+.slbl{font-size:11px;font-weight:500;color:var(--tm);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase}
+.clist{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.ci{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--s2);border:0.5px solid var(--bd);border-radius:var(--r);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ci.sel{border-color:var(--bda);background:var(--bga)}
+.cchk{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--bds);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px}
+.ci.sel .cchk{background:var(--fa);border-color:var(--fa);color:#fff}
+.cmain{flex:1;min-width:0}
+.cr1{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cname{font-size:13px;font-weight:500}
+.czf{font-size:11px;color:var(--ts)}
+.ccode{font-size:14px;font-weight:800;margin-left:3px}
+.ct{font-size:11px;color:var(--tm);margin-top:2px}
+.dctl{display:flex;align-items:center;gap:5px;margin-left:auto}
+.dbtn{width:24px;height:24px;border-radius:50%;border:0.5px solid var(--bds);background:var(--s1);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--font);-webkit-tap-highlight-color:transparent}
+.dval{font-size:12px;color:var(--ts);min-width:30px;text-align:center}
+
+.rcard{background:var(--s2);border:0.5px solid var(--bda);border-radius:12px;padding:16px;margin-bottom:10px}
+.rhdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:11px}
+.rname{font-size:16px;font-weight:500}
+.rzf{font-size:12px;color:var(--ts);margin-top:2px}
+.rsub{font-size:11px;color:var(--tm);margin-top:1px}
+.rbadge{font-size:11px;padding:3px 9px;border-radius:10px;background:var(--bga);color:var(--ta);white-space:nowrap}
+.rcblock{border-radius:10px;padding:20px 16px 14px;margin-bottom:11px;text-align:center}
+.rcbig{font-size:44px;font-weight:900;color:#000;letter-spacing:3px;line-height:1;font-variant-numeric:tabular-nums}
+.rcsub{font-size:12px;color:rgba(255,255,255,0.88);margin-top:6px}
+.rtimer{text-align:center;margin-bottom:9px}
+.rbig{font-size:36px;font-weight:500;letter-spacing:-2px;font-variant-numeric:tabular-nums}
+.rsubl{font-size:11px;color:var(--tm);margin-top:2px}
+.rprog{height:4px;background:var(--s1);border-radius:2px;overflow:hidden;margin-bottom:11px}
+.rfill{height:100%;border-radius:2px;transition:width .5s linear}
+.qlist{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.qi{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--r);background:var(--s1)}
+.qi.qc{background:var(--bga);border:0.5px solid var(--bda)}
+.qdot{width:7px;height:7px;border-radius:50%;background:var(--bds);flex-shrink:0}
+.qdone .qdot{background:var(--tsuc)}
+.qc .qdot{background:var(--fa)}
+.qn{font-size:12px}
+.qzf{font-size:10px;color:var(--tm)}
+.qcode{font-size:12px;font-weight:800;margin:0 3px}
+.qdur{font-size:11px;color:var(--tm);margin-left:auto}
+.qdone .qn,.qdone .qcode,.qdone .qzf{color:var(--tm);text-decoration:line-through}
+.empty{text-align:center;padding:40px 16px;color:var(--tm)}
+.eico{font-size:36px;display:block;margin-bottom:10px}
+.etxt{font-size:13px;line-height:1.6;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="hdr"><div class="hdr-t">十二时辰经络运行助手</div><div class="hdr-s">子午流注 · 玄师公众号</div></div>
+<div class="tabs">
+  <button class="tab on" onclick="sw('auto')" id="tab-auto">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>子午流注
+  </button>
+  <button class="tab" onclick="sw('custom')" id="tab-custom">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>自选运行
+  </button>
+  <button class="tab" onclick="sw('running')" id="tab-running">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>运行中
+  </button>
+</div>
+<div class="pg on" id="page-auto">
+  <div class="clk">
+    <div class="clk-n" id="cnow">--:--:--</div>
+    <div class="clk-r"><div class="clk-s" id="cshi">--时</div><div class="clk-d" id="cdt"></div></div>
+  </div>
+  <div id="ntfbar" class="ntf" onclick="reqNotif()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <span class="ntf-t">开启时辰提醒，每个时辰自动通知</span><span class="ntf-b">开启</span>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div id="autocard"></div>
+</div>
+<div class="pg" id="page-custom">
+  <p class="slbl">选择经络并设置时长</p>
+  <div class="clist" id="clist"></div>
+  <div class="brow">
+    <button class="btn" onclick="clrC()">清空选择</button>
+    <button class="btn btn-p" onclick="startC()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>开始运行
+    </button>
+  </div>
+</div>
+<div class="pg" id="page-running"><div id="rcontent"></div></div>
+</div>
+
+<script>
+const WX={
+  mu:  {n:'木',bg:'#2e7d4f',fang:'东',ji:'春',qing:'怒',wei:'酸'},
+  huo: {n:'火',bg:'#c0392b',fang:'南',ji:'夏',qing:'喜',wei:'苦'},
+  tu:  {n:'土',bg:'#a0720a',fang:'中',ji:'长夏',qing:'思',wei:'甘'},
+  jin: {n:'金',bg:'#7a6010',fang:'西',ji:'秋',qing:'悲',wei:'辛'},
+  shui:{n:'水',bg:'#1a4a7a',fang:'北',ji:'冬',qing:'恐',wei:'咸'},
+};
+
+const M=[
+  {name:'胆经',zangfu:'足少阳·胆腑',code:'9993809',wx:'mu',shi:'子时',range:'23:00–01:00',startH:23,emoji:'🌙',
+   acupoints:'风池、肩井、环跳、阳陵泉、足临泣、悬钟',
+   path:'足少阳胆经，起于目外眦（瞳子髎），绕耳前后，沿头侧、颈肩外侧、胁肋、大腿外侧循行，止于第四趾末节外侧（足窍阴）',
+   advice:'胆经当令，胆汁排毒高峰，宜深度睡眠。忌熬夜、暴饮暴食、情绪激动。',
+   nourish:'子时前入睡最佳，侧卧养胆气。睡前按揉阳陵泉3-5分钟助眠安神。',
+   url:'https://mp.weixin.qq.com/s/aSt6N6F7kDQh5p-qtGKRyw'},
+  {name:'肝经',zangfu:'足厥阴·肝脏',code:'9993909',wx:'mu',shi:'丑时',range:'01:00–03:00',startH:1,emoji:'🌿',
+   acupoints:'大敦、行间、太冲、期门、章门、曲泉',
+   path:'足厥阴肝经，起于大趾末节外侧（大敦），经足背内侧、内踝、小腿内侧、大腿内侧，绕阴器，抵小腹，挟胃，属肝络胆，止于期门',
+   advice:'肝经当令，肝血回流修复最旺。务必熟睡，忌动怒、饮酒。此时熬夜伤肝最重。',
+   nourish:'睡前揉按太冲穴（足背第一二跖骨间）疏肝解郁，每侧按揉2分钟。',
+   url:'https://mp.weixin.qq.com/s/E8j7we4PjKz0QYDc-rus3g'},
+  {name:'肺经',zangfu:'手太阴·肺脏',code:'9994509',wx:'jin',shi:'寅时',range:'03:00–05:00',startH:3,emoji:'💨',
+   acupoints:'中府、云门、尺泽、列缺、太渊、鱼际、少商',
+   path:'手太阴肺经，起于中焦，下络大肠，还循胃口，上膈属肺，从肺系横出腋下，沿上臂内侧前缘，经肘窝、前臂内侧桡骨缘，止于拇指末节桡侧（少商）',
+   advice:'肺经当令，呼吸系统最活跃。若常在此时辰自然醒，需留意肺气虚弱信号。',
+   nourish:'深呼吸练习，轻拍胸部，按揉太渊（腕横纹桡侧）、鱼际各2分钟。',
+   url:'https://mp.weixin.qq.com/s/If2L3GMmI0dPYI60Yzil3w'},
+  {name:'大肠经',zangfu:'手阳明·大肠腑',code:'9994609',wx:'jin',shi:'卯时',range:'05:00–07:00',startH:5,emoji:'🌅',
+   acupoints:'商阳、合谷、曲池、手三里、肩髃、迎香',
+   path:'手阳明大肠经，起于食指末节桡侧（商阳），沿食指桡侧、虎口、前臂外侧前缘、上臂外侧前缘，经肩、颈，绕口唇，止于对侧鼻翼旁（迎香）',
+   advice:'大肠经当令，最佳排便时间。晨起喝一杯温水，规律如厕，排除毒素。',
+   nourish:'合谷穴（虎口处）是大肠原穴，常按可通便改善肠胃。曲池穴清热解表。',
+   url:'https://mp.weixin.qq.com/s/vgO2GN0TyvPI_WitIQxi1A'},
+  {name:'胃经',zangfu:'足阳明·胃腑',code:'9994409',wx:'tu',shi:'辰时',range:'07:00–09:00',startH:7,emoji:'🍚',
+   acupoints:'承泣、地仓、颊车、足三里、丰隆、内庭、梁丘',
+   path:'足阳明胃经，起于鼻翼旁，上行鼻根，沿面颊、耳前、额角，下行颈项，经胸腹前正中旁开4寸，沿大腿外侧前缘、小腿前外侧，止于第二趾末节外侧（厉兑）',
+   advice:'胃经当令，一天中消化功能最强。务必吃早餐且吃好，此时进食营养吸收最佳。',
+   nourish:'足三里（外膝眼下3寸）是养胃要穴，饭后半小时顺时针按揉，增强胃肠蠕动。',
+   url:'https://mp.weixin.qq.com/s/7wUeewzH-dsu88hh-wWSOw'},
+  {name:'脾经',zangfu:'足太阴·脾脏',code:'9994309',wx:'tu',shi:'巳时',range:'09:00–11:00',startH:9,emoji:'🌾',
+   acupoints:'隐白、太白、公孙、三阴交、地机、阴陵泉、血海、大横',
+   path:'足太阴脾经，起于大趾末节内侧（隐白），沿足内侧赤白肉际、内踝前、小腿内侧、大腿内侧前缘，入腹，属脾络胃，止于腋下（大包）',
+   advice:'脾经当令，脾主运化最旺。宜专注工作学习，忌过于安逸久坐。脾喜燥恶湿。',
+   nourish:'三阴交（内踝上3寸）、血海（膝盖内侧上2寸）常按健脾祛湿调气血。',
+   url:'https://mp.weixin.qq.com/s/eV1hXc4pG_XrMWehH1t47A'},
+  {name:'心经',zangfu:'手少阴·心脏',code:'9994109',wx:'huo',shi:'午时',range:'11:00–13:00',startH:11,emoji:'❤️',
+   acupoints:'极泉、少海、通里、阴郄、神门、少府、少冲',
+   path:'手少阴心经，起于心中，出属心系，下膈络小肠；其直者从心系挟咽喉，沿上臂内侧后缘，经肘窝、前臂内侧后缘，止于小指末节桡侧（少冲）',
+   advice:'心经当令，午时宜小睡20-30分钟养心气。忌剧烈运动、大喜大悲、暴晒。',
+   nourish:'神门穴（腕横纹尺侧）是心经原穴，常按可宁心安神、改善失眠缓解心悸。',
+   url:'https://mp.weixin.qq.com/s/EjIKEY49T6kYalxD20PWzw'},
+  {name:'小肠经',zangfu:'手太阳·小肠腑',code:'9994709',wx:'huo',shi:'未时',range:'13:00–15:00',startH:13,emoji:'🔄',
+   acupoints:'少泽、后溪、腕骨、养老、支正、天宗、颧髎、听宫',
+   path:'手太阳小肠经，起于小指末节尺侧（少泽），沿小指尺侧、腕部、前臂外侧后缘、上臂后侧，绕肩胛，经颈肩，止于耳屏前（听宫）',
+   advice:'小肠经当令，吸收营养的黄金时段，午餐精华此时吸收转化，注意多补充水分。',
+   nourish:'后溪穴（握拳小指侧掌横纹端）可通督脉，对颈椎、腰椎保健效果显著。',
+   url:'https://mp.weixin.qq.com/s/C9K9K_QFzRz9iQPvxmV1zw'},
+  {name:'膀胱经',zangfu:'足太阳·膀胱腑',code:'9994809',wx:'shui',shi:'申时',range:'15:00–17:00',startH:15,emoji:'💧',
+   acupoints:'睛明、攒竹、天柱、肺俞、心俞、肾俞、委中、承山、昆仑、至阴',
+   path:'足太阳膀胱经，起于目内眦（睛明），沿额、头顶、颈项，挟脊柱两侧4指宽下行至腰，经臀部、大腿后侧、腘窝、小腿后侧，止于小趾末节外侧（至阴）',
+   advice:'膀胱经当令，全身最长经络当令，下午精力充沛适合工作。注意多补水促进排毒。',
+   nourish:'委中穴（腘窝中点）对腰背疼痛效果显著；拍打背部膀胱经可疏通全身。',
+   url:'https://mp.weixin.qq.com/s/qXNNP-HgT5G5FrtBUzrdLA'},
+  {name:'肾经',zangfu:'足少阴·肾脏',code:'9995109',wx:'shui',shi:'酉时',range:'17:00–19:00',startH:17,emoji:'🌊',
+   acupoints:'涌泉、然谷、太溪、大钟、照海、复溜、阴谷、俞府',
+   path:'足少阴肾经，起于足小趾下，斜走足心（涌泉），沿内踝后、小腿内侧后缘、大腿内侧后缘，贯脊属肾络膀胱，止于锁骨下缘（俞府）',
+   advice:'肾经当令，黄昏时分宜补肾保精。忌过度劳累、房劳、剧烈运动。肾为先天之本。',
+   nourish:'涌泉（足底前1/3凹陷）、太溪（内踝后方）是肾经要穴，睡前泡脚后按揉温肾补阳。',
+   url:'https://mp.weixin.qq.com/s/GHrqZKC0r7HUJhsY9-HnkA'},
+  {name:'心包经',zangfu:'手厥阴·心包络',code:'9994209',wx:'huo',shi:'戌时',range:'19:00–21:00',startH:19,emoji:'🫶',
+   acupoints:'天池、天泉、曲泽、郄门、间使、内关、大陵、劳宫、中冲',
+   path:'手厥阴心包经，起于胸中，出属心包，下膈历络三焦；其支者循胸出胁，经腋下，沿上臂内侧中线、肘窝、前臂内侧中线，止于中指末节（中冲）',
+   advice:'心包经当令，护心保心的关键时段。宜散步、与家人聊天，放松心情，忌剧烈活动。',
+   nourish:'内关穴（腕横纹上2寸两筋之间）可缓解心悸胸闷，睡前按揉助眠。',
+   url:'https://mp.weixin.qq.com/s/fNWIVAUMRQzbx0cSeVbKWg'},
+  {name:'三焦经',zangfu:'手少阳·三焦腑',code:'9994909',wx:'huo',shi:'亥时',range:'21:00–23:00',startH:21,emoji:'🌙',
+   acupoints:'关冲、中渚、阳池、外关、支沟、翳风、耳门、丝竹空',
+   path:'手少阳三焦经，起于无名指末节尺侧（关冲），沿无名指尺侧、腕背、前臂外侧中线、上臂外侧中线，经肩，绕耳，止于眉梢（丝竹空）',
+   advice:'三焦经当令，三焦是全身气化通道，宜准备睡眠，让百脉休养。务必忌熬夜。',
+   nourish:'外关（腕背横纹上2寸）、支沟疏通三焦气机；亥时腹式呼吸冥想平衡全身能量。',
+   url:'https://mp.weixin.qq.com/s/qb1wU7-iJ79WFiXl-ZjzDQ'},
+];
+
+let notifOK=false,csel={},crun=false,cq=[],cidx=0,crem=0,ctmr=null,paused=false,vIdx=-1;
+const wx=k=>WX[k];
+
+function getCI(){
+  const h=new Date().getHours();
+  if(h>=23||h<1)return 0;
+  for(let i=1;i<12;i++){if(h>=M[i].startH&&h<M[i].startH+2)return i;}
+  return 0;
+}
+function pad(n){return String(n).padStart(2,'0')}
+function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return h>0?`${h}:${pad(m)}:${pad(ss)}`:`${pad(m)}:${pad(ss)}`;}
+function getRemain(){
+  const now=new Date(),h=now.getHours(),m=now.getMinutes(),s=now.getSeconds(),ci=getCI();
+  let e=M[ci].startH+2;if(e>=24)e-=24;
+  let d=e-h;if(d<0)d+=24;
+  return Math.max(0,d*3600-m*60-s);
+}
+
+function renderChips(){
+  const ci=getCI();
+  document.getElementById('chips').innerHTML=M.map((m,i)=>
+    `<div class="chip${i===ci?' on':''}" onclick="viewM(${i})">
+      <div class="chip-s">${m.shi}</div><div class="chip-j">${m.name}</div>
+    </div>`
+  ).join('');
+}
+
+function viewM(idx){
+  vIdx=idx;
+  document.querySelectorAll('.chip').forEach((c,i)=>c.classList.toggle('on',i===idx));
+  renderCard(idx);
+}
+
+function renderCard(idx){
+  const ci=getCI();
+  if(idx===undefined)idx=ci;
+  const m=M[idx],w=wx(m.wx),isNow=(idx===ci);
+  const rem=isNow?getRemain():0,pct=isNow?Math.round((7200-rem)/7200*100):0;
+  const badge=isNow
+    ?`<span class="mbadge b-now">当前时辰</span>`
+    :idx===(ci+1)%12
+    ?`<span class="mbadge b-next">下一时辰</span>`
+    :`<span class="mbadge b-else">${m.range}</span>`;
+
+  const timerHtml=isNow?`
+    <div class="twrap">
+      <div class="tring">
+        <svg width="66" height="66" viewBox="0 0 66 66">
+          <circle cx="33" cy="33" r="27" fill="none" stroke="var(--bd)" stroke-width="5"/>
+          <circle cx="33" cy="33" r="27" fill="none" stroke="${w.bg}" stroke-width="5"
+            stroke-dasharray="${(2*Math.PI*27).toFixed(1)}"
+            stroke-dashoffset="${(2*Math.PI*27*(1-pct/100)).toFixed(1)}"
+            stroke-linecap="round" id="rarc"/>
+        </svg>
+        <div class="ttext"><div class="thm" id="rhm">${fmt(rem)}</div><div class="tlb">剩余</div></div>
+      </div>
+      <div class="tinfo">
+        <div class="tilb">本时辰进度</div>
+        <div class="pbar"><div class="pfill" id="aprog" style="width:${pct}%;background:${w.bg}"></div></div>
+        <div class="tpct" id="tpct">${pct}% 已过，剩余约 <span id="remmin">${Math.floor(rem/60)}</span> 分钟</div>
+      </div>
+    </div>`:'';
+
+  document.getElementById('autocard').innerHTML=`
+    <div class="banner" style="background:${w.bg}">
+      <div class="bcode">${m.code}</div>
+      <div class="bsub">${m.shi} ${m.range} · 疏通${m.name}</div>
+      <a class="obtn" href="${m.url}" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        立即打开文章（时辰到自动触发）
+      </a>
+    </div>
+    <div class="mcard">
+      <div class="mhdr">
+        <div class="mico" style="background:${w.bg}22">${m.emoji}</div>
+        <div class="mttl">
+          <div class="mname">${m.shi} · ${m.name}</div>
+          <div class="mzf">${m.zangfu} · 五行${w.n} · ${w.fang}方 · ${w.ji} · ${w.qing} · ${w.wei}</div>
+          <div class="mtime">${m.range}</div>
+        </div>
+        ${badge}
+      </div>
+      ${timerHtml}
+      <div class="ab" style="border-color:${w.bg}"><div class="albl">经络循行</div><div class="atxt">${m.path}</div></div>
+      <div class="ab" style="border-color:${w.bg}99"><div class="albl">重要穴位</div><div class="atxt">${m.acupoints}</div></div>
+      <div class="ab" style="border-color:${w.bg}66"><div class="albl">当令建议</div><div class="atxt">${m.advice}</div></div>
+      <div class="ab" style="border-color:${w.bg}44"><div class="albl">养护方法</div><div class="atxt">${m.nourish}</div></div>
+    </div>`;
+}
+
+let lastCI=-1;
+function tickAuto(){
+  const now=new Date();
+  document.getElementById('cnow').textContent=now.toLocaleTimeString('zh-CN',{hour12:false});
+  document.getElementById('cdt').textContent=now.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  const ci=getCI();
+  document.getElementById('cshi').textContent=M[ci].shi+' · '+M[ci].name;
+
+  // 检测时辰切换
+  if(lastCI>=0 && ci!==lastCI){
+    vIdx=-1;
+    renderChips();
+    renderCard();
+    if(notifOK)new Notification('时辰更替',{body:`${M[ci].shi}${M[ci].name}开始，连接代码 ${M[ci].code}`});
+    // 提示用户手动点击（浏览器会拦截非手势触发的window.open）
+    const bar=document.getElementById('autocard');
+    if(bar){
+      const tip=document.createElement('div');
+      tip.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;cursor:pointer;max-width:320px;text-align:center';
+      tip.textContent=`${M[ci].shi}${M[ci].name}到！点击打开文章运行`;
+      tip.onclick=()=>{window.open(M[ci].url,'_blank');tip.remove();};
+      document.body.appendChild(tip);
+      setTimeout(()=>tip.remove&&tip.remove(),8000);
+    }
+  }
+  lastCI=ci;
+
+  // 更新倒计时（只在查看当前时辰时）
+  const vi=vIdx<0?ci:vIdx;
+  if(vi===ci){
+    const r=getRemain();
+    const el=document.getElementById('rhm');if(el)el.textContent=fmt(r);
+    const pct=Math.round((7200-r)/7200*100);
+    const arc=document.getElementById('rarc');
+    if(arc){const C=2*Math.PI*27;arc.setAttribute('stroke-dashoffset',(C*(1-pct/100)).toFixed(1));}
+    const pg=document.getElementById('aprog');if(pg)pg.style.width=pct+'%';
+    const rm=document.getElementById('remmin');if(rm)rm.textContent=Math.floor(r/60);
+  }
+}
+
+function reqNotif(){
+  if(typeof Notification==='undefined'){
+    const bar=document.getElementById('ntfbar');
+    bar.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="ntf-t">当前环境不支持系统通知（如微信内置浏览器），请在Safari或Chrome中打开</span>`;
+    return;
+  }
+  if(Notification.permission==='granted'){
+    notifOK=true;
+    const bar=document.getElementById('ntfbar');bar.classList.add('ok');
+    bar.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tsuc)"><polyline points="20 6 9 17 4 12"/></svg><span class="ntf-t">时辰提醒已开启，每个时辰到点自动通知</span><span class="ntf-b">已开启</span>`;
+    return;
+  }
+  if(Notification.permission==='denied'){
+    const bar=document.getElementById('ntfbar');
+    bar.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="ntf-t">通知已被禁止，请在浏览器设置中手动开启本网站通知权限</span>`;
+    return;
+  }
+  Notification.requestPermission().then(p=>{
+    notifOK=(p==='granted');
+    const bar=document.getElementById('ntfbar');
+    if(notifOK){
+      bar.classList.add('ok');
+      bar.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tsuc)"><polyline points="20 6 9 17 4 12"/></svg><span class="ntf-t">时辰提醒已开启，每个时辰到点自动通知</span><span class="ntf-b">已开启</span>`;
+    }else{
+      bar.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="ntf-t">未获得授权，请在浏览器设置中开启本网站通知权限后重试</span>`;
+    }
+  });
+}
+
+function renderCList(){
+  document.getElementById('clist').innerHTML=M.map((m,i)=>{
+    const sel=csel.hasOwnProperty(i),w=wx(m.wx),dur=sel?csel[i]:30;
+    return `<div class="ci${sel?' sel':''}" onclick="togC(${i})">
+      <div class="cchk">${sel?'✓':''}</div>
+      <div class="cmain">
+        <div class="cr1">
+          <span class="cname">${m.name}</span>
+          <span class="czf">${m.zangfu}</span>
+          <span class="ccode">${m.code}</span>
+        </div>
+        <div class="ct">${m.shi} ${m.range} · 五行${w.n}(${w.fang}·${w.ji}·${w.qing})</div>
+      </div>
+      ${sel?`<div class="dctl" onclick="event.stopPropagation()">
+        <button class="dbtn" onclick="chD(${i},-5)">−</button>
+        <span class="dval" id="dv-${i}">${dur}分</span>
+        <button class="dbtn" onclick="chD(${i},5)">+</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function togC(i){if(csel.hasOwnProperty(i))delete csel[i];else csel[i]=30;renderCList();}
+function chD(i,d){csel[i]=Math.max(5,Math.min(180,(csel[i]||30)+d));const el=document.getElementById('dv-'+i);if(el)el.textContent=csel[i]+'分';}
+function clrC(){csel={};renderCList();}
+
+function startC(){
+  const keys=Object.keys(csel).map(Number);
+  if(!keys.length){alert('请先选择至少一条经络');return;}
+  cq=keys.map(i=>({idx:i,dur:csel[i]*60}));
+  cidx=0;crun=true;paused=false;crem=cq[0].dur;
+  sw('running');renderR();tick();
+}
+
+function tick(){
+  if(ctmr)clearInterval(ctmr);
+  if(!crun||paused)return;
+  ctmr=setInterval(()=>{
+    crem--;updR();
+    if(crem<=0){
+      const dn=M[cq[cidx].idx].name;
+      cidx++;
+      if(cidx>=cq.length){
+        crun=false;clearInterval(ctmr);renderR();
+        if(notifOK)new Notification('运行完成',{body:'所有经络已完成运行'});
+        return;
+      }
+      crem=cq[cidx].dur;
+      const nm=M[cq[cidx].idx];
+      if(notifOK)new Notification('切换经络',{body:`${dn}完成，自动打开${nm.name}文章`});
+      window.open(nm.url,'_blank');
+      renderR();tick();
+    }
+  },1000);
+}
+
+function updR(){
+  const el=document.getElementById('rt');if(el)el.textContent=fmt(crem);
+  const c=cq[cidx],pct=Math.round((c.dur-crem)/c.dur*100);
+  const pf=document.getElementById('rf');if(pf)pf.style.width=pct+'%';
+}
+
+function renderR(){
+  const el=document.getElementById('rcontent');
+  if(!crun&&!cq.length){
+    el.innerHTML=`<div class="empty"><span class="eico">▶</span><div class="etxt">尚无运行中的计划<br>请先在「自选运行」中选择经络</div><button class="btn" onclick="sw('custom')" style="margin:0 auto;max-width:160px">去选择经络</button></div>`;
+    return;
+  }
+  if(!crun&&cidx>=cq.length){
+    el.innerHTML=`<div class="empty"><span class="eico">✅</span><div class="etxt">所有经络已完成运行</div><button class="btn" onclick="sw('custom')" style="margin:0 auto;max-width:160px">重新选择</button></div>`;
+    return;
+  }
+  const cur=cq[cidx],m=M[cur.idx],w=wx(m.wx),pct=Math.round((cur.dur-crem)/cur.dur*100);
+  const qHtml=cq.map((q,i)=>{
+    const qm=M[q.idx],qw=wx(qm.wx);
+    const cls=i<cidx?'qi qdone':i===cidx?'qi qc':'qi';
+    return `<div class="${cls}"><div class="qdot"></div><span class="qn">${qm.name}</span><span class="qzf">${qw.n}</span><span class="qcode">${qm.code}</span><span class="qdur">${Math.floor(q.dur/60)}分</span>${i===cidx?`<span style="font-size:11px;color:var(--ta);margin-left:2px">运行中</span>`:''}</div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="rcard">
+      <div class="rhdr">
+        <div>
+          <div class="rname">${m.emoji} ${m.name}</div>
+          <div class="rzf">${m.zangfu} · 五行${w.n}(${w.fang}·${w.ji})</div>
+          <div class="rsub">${m.shi} · ${m.range}</div>
+        </div>
+        <div class="rbadge">第${cidx+1}/${cq.length}条</div>
+      </div>
+      <div class="rcblock" style="background:${w.bg}">
+        <div class="rcbig">${m.code}</div>
+        <div class="rcsub">${m.shi} ${m.range} · 疏通${m.name}</div>
+      </div>
+      <div class="rtimer"><div class="rbig" id="rt">${fmt(crem)}</div><div class="rsubl">剩余时间</div></div>
+      <div class="rprog"><div class="rfill" id="rf" style="width:${pct}%;background:${w.bg}"></div></div>
+      <div class="brow" style="margin-bottom:0">
+        <button class="btn" id="bpause" onclick="togP()">${paused?'继续':'暂停'}</button>
+        <button class="btn" onclick="skip()">跳过</button>
+        <a class="btn btn-p" href="${m.url}" target="_blank">文章</a>
+      </div>
+    </div>
+    <p class="slbl" style="margin-top:13px">运行队列</p>
+    <div class="qlist">${qHtml}</div>
+    <button class="btn btn-d" style="width:100%" onclick="stopAll()">停止全部</button>`;
+}
+
+function togP(){paused=!paused;const b=document.getElementById('bpause');if(b)b.textContent=paused?'继续':'暂停';if(paused)clearInterval(ctmr);else tick();}
+function skip(){clearInterval(ctmr);cidx++;if(cidx>=cq.length){crun=false;renderR();return;}crem=cq[cidx].dur;paused=false;renderR();tick();}
+function stopAll(){clearInterval(ctmr);crun=false;cq=[];cidx=0;paused=false;renderR();}
+
+function sw(id){
+  ['auto','custom','running'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('on',t===id);
+    document.getElementById('page-'+t).classList.toggle('on',t===id);
+  });
+  if(id==='running')renderR();
+}
+
+renderChips();
+renderCard();
+renderCList();
+setInterval(tickAuto,1000);
+tickAuto();
+</script>
+</body>
+</html>
