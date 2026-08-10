@@ -364,6 +364,18 @@ function renderCard(idx){
 }
 
 let lastCI=-1;
+function syncAutoPauseBtn(){
+  const btn=document.getElementById('auto-pause-btn');
+  if(!btn)return;
+  if(autoPaused){
+    btn.textContent='恢复运行';
+    btn.classList.add('paused');
+  } else {
+    btn.textContent='暂停';
+    btn.classList.remove('paused');
+  }
+}
+
 function toggleAutoPause(){
   autoPaused=!autoPaused;
   try{
