@@ -643,10 +643,63 @@ const MERIDIANS=[
   {name:'三焦经',code:'9994909',shi:'亥时',startH:21,url:'https://mp.weixin.qq.com/s/qb1wU7-iJ79WFiXl-ZjzDQ'},
 ];
 
-// 直接引用独立SW文件注册
+// SW代码字符串
+const swCode = `
+const timers=[];
+self.addEventListener('install',()=>self.skipWaiting());
+self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
+self.addEventListener('notificationclick',e=>{
+  e.notification.close();
+  const url=e.notification.data&&e.notification.data.url;
+  e.waitUntil(clients.matchAll({type:'window'}).then(cls=>{
+    for(const c of cls){if('focus' in c)return c.focus();}
+    if(url&&clients.openWindow)return clients.openWindow(url);
+  }));
+});
+self.addEventListener('message',e=>{
+  if(!e.data)return;
+  // 子午流注通知
+  if(e.data.type==='SCHEDULE'){
+    timers.forEach(t=>clearTimeout(t));timers.length=0;
+    e.data.notifs.forEach(n=>{
+      const delay=n.time-Date.now();
+      if(delay>0&&delay<90000000){
+        timers.push(setTimeout(()=>{
+          self.registration.showNotification(n.title,{
+            body:n.body,icon:n.icon,tag:'jl-'+n.h,
+            renotify:true,requireInteraction:false,
+            data:{url:n.url}
+          });
+        },delay));
+      }
+    });
+  }
+  // 自选运行通知
+  if(e.data.type==='SCHEDULE_CUSTOM'){
+    // 清除旧的自选通知
+    timers.filter((_,i)=>i>=12).forEach(t=>clearTimeout(t));
+    e.data.notifs.forEach(n=>{
+      const delay=n.time-Date.now();
+      if(delay>0&&delay<86400000){
+        timers.push(setTimeout(()=>{
+          self.registration.showNotification(n.title,{
+            body:n.body,icon:n.icon||'',tag:'custom-'+n.h,
+            renotify:true,requireInteraction:true,
+            data:{url:n.url}
+          });
+        },delay));
+      }
+    });
+  }
+});
+`;
+
+// 用Blob注册SW（无需独立文件）
 function registerSW(){
   if(!('serviceWorker' in navigator))return;
-  navigator.serviceWorker.register('/meridian/sw.js',{scope:location.pathname.replace(/[^/]*$/,'')})
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  const url=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url,{scope:location.pathname.replace(/[^/]*$/,'')})
     .then(reg=>{
       window._swReg=reg;
       console.log('SW已注册');
