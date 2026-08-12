@@ -331,7 +331,7 @@ function renderCard(idx){
       <div class="tinfo">
         <div class="tilb">本时辰进度</div>
         <div class="pbar"><div class="pfill" id="aprog" style="width:${pct}%;background:${w.bg}"></div></div>
-        <div class="tpct" id="tpct">${pct}% 已过，剩余约 <span id="remmin">${Math.floor(rem/60)}</span> 分钟</div>
+        <div class="tpct" id="tpct"><span id="tpct-pct">${pct}</span>% 已过，剩余约 <span id="remmin">${Math.floor(rem/60)}</span> 分钟</div>
       </div>
     </div>`:'';
 
@@ -432,6 +432,7 @@ function tickAuto(){
     if(arc){const C=2*Math.PI*27;arc.setAttribute('stroke-dashoffset',(C*(1-pct/100)).toFixed(1));}
     const pg=document.getElementById('aprog');if(pg)pg.style.width=pct+'%';
     const rm=document.getElementById('remmin');if(rm)rm.textContent=Math.floor(r/60);
+    const pp=document.getElementById('tpct-pct');if(pp)pp.textContent=pct;
   }
 }
 
@@ -460,16 +461,29 @@ function renderCList(){
   }).join('');
 }
 
-function togC(i){if(csel.hasOwnProperty(i))delete csel[i];else csel[i]=30;renderCList();}
-function chD(i,d){csel[i]=Math.max(5,Math.min(180,(csel[i]||30)+d));const el=document.getElementById('dv-'+i);if(el)el.textContent=csel[i]+'分';}
-function clrC(){csel={};renderCList();}
+function togC(i){
+  if(csel.hasOwnProperty(i))delete csel[i];else csel[i]=30;
+  try{localStorage.setItem('customSel',JSON.stringify(csel));}catch(e){}
+  renderCList();
+}
+function chD(i,d){
+  csel[i]=Math.max(5,Math.min(180,(csel[i]||30)+d));
+  try{localStorage.setItem('customSel',JSON.stringify(csel));}catch(e){}
+  const el=document.getElementById('dv-'+i);if(el)el.textContent=csel[i]+'分';
+}
+function clrC(){
+  csel={};
+  try{localStorage.removeItem('customSel');}catch(e){}
+  renderCList();
+}
 
 function startC(){
   const keys=Object.keys(csel).map(Number);
   if(!keys.length){alert('请先选择至少一条经络');return;}
   cq=keys.map(i=>({idx:i,dur:csel[i]*60}));
   cidx=0;crun=true;paused=false;crem=cq[0].dur;
-  cStartTime=Date.now(); // 记录开始时间
+  cStartTime=Date.now();
+  try{localStorage.removeItem('customSel');}catch(e){} // 记录开始时间
   sw('running');renderR();tick();
   try{localStorage.setItem('lastTab','running');}catch(e){}
   // 把所有经络结束时间注册到SW
@@ -599,7 +613,7 @@ function togP(){
 function skip(){clearInterval(ctmr);cidx++;if(cidx>=cq.length){crun=false;renderR();return;}crem=cq[cidx].dur;paused=false;renderR();tick();}
 function stopAll(){
   clearInterval(ctmr);crun=false;cq=[];cidx=0;paused=false;cStartTime=0;
-  try{localStorage.removeItem('customPaused');}catch(e){}
+  try{localStorage.removeItem('customPaused');localStorage.removeItem('customSel');}catch(e){}
   if(window._swReg&&window._swReg.active){
     window._swReg.active.postMessage({type:'SCHEDULE_CUSTOM',notifs:[]});
   }
@@ -621,19 +635,41 @@ function sw(id){
 
 renderChips();
 renderCList();
-// 恢复暂停状态
+// 恢复暂停状态 + 智能恢复标签
 try{
+  // 1. 恢复子午流注暂停状态
   if(localStorage.getItem('autoPaused')==='1'){
     autoPaused=true;
-    renderCard();
-    syncAutoPauseBtn();
+  }
+  // 2. 恢复自选运行暂停状态
+  if(localStorage.getItem('customPaused')==='1'){
+    paused=true;
+  }
+  // 3. 恢复自选运行选择状态
+  const savedSel=localStorage.getItem('customSel');
+  if(savedSel){
+    try{csel=JSON.parse(savedSel);}catch(e){}
+    renderCList();
+  }
+  // 4. 智能决定显示哪个标签
+  if(crun){
+    // 有运行中任务 → 运行中
+    sw('running');
+  } else if(Object.keys(csel).length>0){
+    // 有已选经络但未开始 → 自选运行
+    sw('custom');
   } else {
+    // 默认子午流注
+    sw('auto');
+  }
+  // 5. 启动时钟（如果没暂停）
+  if(!autoPaused){
     renderCard();
     autoTimer=setInterval(tickAuto,1000);
     tickAuto();
-  }
-  if(localStorage.getItem('customPaused')==='1'){
-    paused=true;
+  } else {
+    renderCard();
+    syncAutoPauseBtn();
   }
 }catch(e){
   renderCard();
@@ -670,56 +706,8 @@ const MERIDIANS=[
   {name:'三焦经',code:'9994909',shi:'亥时',startH:21,url:'https://mp.weixin.qq.com/s/qb1wU7-iJ79WFiXl-ZjzDQ'},
 ];
 
-// 直接引用独立SW文件注册
-function registerSW(){
-  if(!('serviceWorker' in navigator))return;
-  navigator.serviceWorker.register('/meridian/sw.js',{scope:location.pathname.replace(/[^/]*$/,'')})
-    .then(reg=>{
-      window._swReg=reg;
-      console.log('SW已注册');
-      // 等SW激活后调度通知
-      const doSchedule=()=>scheduleNotifs(reg);
-      if(reg.active)doSchedule();
-      else{reg.addEventListener('updatefound',()=>{
-        reg.installing.addEventListener('statechange',e=>{
-          if(e.target.state==='activated')doSchedule();
-        });
-      });}
-      // 每小时重新调度
-      setInterval(()=>scheduleNotifs(reg),3600000);
-    })
-    .catch(e=>console.log('SW注册失败:',e));
-}
-
-function scheduleNotifs(reg){
-  if(!reg||!reg.active)return;
-  const now=new Date();
-  const notifs=MERIDIANS.map(m=>{
-    const t=new Date();
-    t.setHours(m.startH,0,0,0);
-    if(t<=now)t.setDate(t.getDate()+1);
-    return {
-      time:t.getTime(),
-      title:`⏰ ${m.shi} · ${m.name}时辰到`,
-      body:`连接代码：${m.code}\n点击打开文章开始运行`,
-      icon:ICON,
-      url:m.url,
-      h:m.startH
-    };
-  });
-  reg.active.postMessage({type:'SCHEDULE',notifs});
-  console.log('已调度',notifs.length,'个时辰通知');
-}
-
-// 请求通知权限并注册SW
-window.reqNotif=function(){
-  if(!('Notification' in window)){
-    const bar=document.getElementById('ntfbar');
-    if(bar)bar.innerHTML='<span class="ntf-t">当前环境不支持通知，请在Chrome或Safari中打开</span>';
-    return;
-  }
-  if(Notification.permission==='granted'){
-    notifOK=true;setNotifGranted();registerSW();return;
+// SW代码字符串
+registerSW();return;
   }
   if(Notification.permission==='denied'){
     const bar=document.getElementById('ntfbar');
@@ -755,6 +743,33 @@ window.addEventListener('load',()=>{
 
 registerSW();
 })();
+</script>
+
+
+<script>
+// ── Service Worker 注册 ──────────────────────────────
+function registerSW(){
+  if(!('serviceWorker' in navigator))return;
+  navigator.serviceWorker.register('/meridian/sw.js',{scope:'/meridian/'})
+    .then(reg=>{
+      window._swReg=reg;
+      console.log('SW已注册');
+      const doSchedule=()=>{
+        if(reg.active){
+          reg.active.postMessage({type:'SCHEDULE'});
+          console.log('已通知SW调度');
+        }
+      };
+      if(reg.active)doSchedule();
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{
+        if(navigator.serviceWorker.controller){
+          navigator.serviceWorker.controller.postMessage({type:'SCHEDULE'});
+        }
+      });
+      setInterval(doSchedule,3600000);
+    })
+    .catch(e=>console.log('SW注册失败:',e));
+}
 </script>
 
 </body>
