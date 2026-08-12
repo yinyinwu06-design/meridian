@@ -51,6 +51,7 @@ self.addEventListener('notificationclick', e => {
 // 接收页面消息
 self.addEventListener('message', e => {
   if(!e.data) return;
+  if(e.data.type==='SKIP_WAITING'){self.skipWaiting();return;}
   if(e.data.type === 'SCHEDULE') {
     scheduleAll();
   }
