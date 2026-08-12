@@ -1,4 +1,4 @@
-const CACHE = 'jl-sw-v1';
+const CACHE = 'jl-sw-v2';
 const timers = [];
 
 // 12条经络数据
@@ -21,10 +21,15 @@ self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    self.clients.claim().then(() => {
-      // SW激活后主动调度今日通知，不依赖页面发消息
-      scheduleAll();
-    })
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(key => key !== CACHE).map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+      .then(() => {
+        // SW激活后主动调度今日通知，不依赖页面发消息
+        scheduleAll();
+      })
   );
 });
 
