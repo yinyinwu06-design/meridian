@@ -615,10 +615,14 @@ function registerSW(){
     const savedSel=localStorage.getItem('customSel');
     if(savedSel){try{csel=JSON.parse(savedSel);renderCList();}catch(e){}}
   }catch(e){}
-  // 智能恢复标签
+  // 智能恢复标签（自选运行优先级高于子午流注暂停状态）
   if(crun)sw('running');
   else if(Object.keys(csel).length>0)sw('custom');
-  else sw('auto');
+  else{
+    sw('auto');
+    // 只有在子午流注页面时才恢复暂停状态
+    if(autoPaused){syncAutoPauseBtn();}
+  }
   // 启动时钟
   renderCard();
   if(!autoPaused){autoTimer=setInterval(tickAuto,1000);tickAuto();}
