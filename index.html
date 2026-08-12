@@ -585,12 +585,9 @@ function sw(id){
   });
   if(id==='running')renderR();
   if(id==='auto')setTimeout(syncAutoPauseBtn,50);
-  // 用URL hash记录当前标签，比localStorage更可靠
-  try{
-    if(location.hash!=='#'+id){
-      history.replaceState(null,'','#'+id);
-    }
-  }catch(e){}
+  // 同时用sessionStorage和localStorage记录，提高可靠性
+  try{sessionStorage.setItem('lastTab',id);}catch(e){}
+  try{localStorage.setItem('lastTab',id);}catch(e){}
 }
 
 // Service Worker
@@ -635,14 +632,14 @@ function registerSW(){
     const savedSel=localStorage.getItem('customSel');
     if(savedSel){try{csel=JSON.parse(savedSel);renderCList();}catch(e){}}
   }catch(e){}
-  // 从URL hash恢复标签（最可靠的方式）
+  // 恢复上次标签（sessionStorage优先，其次localStorage）
   (function(){
     let tab='auto';
-    const hash=location.hash.replace('#','');
-    if(['auto','custom','running'].includes(hash))tab=hash;
+    try{tab=sessionStorage.getItem('lastTab')||localStorage.getItem('lastTab')||'auto';}catch(e){}
+    if(!['auto','custom','running'].includes(tab))tab='auto';
     // 运行中任务优先
     if(crun)tab='running';
-    // 运行中但没有任务，回到auto
+    // 没有运行中任务但记录了running，回到auto
     else if(tab==='running')tab='auto';
     sw(tab);
   })();
