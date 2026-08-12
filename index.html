@@ -596,13 +596,28 @@ function sw(id){
 // Service Worker
 function registerSW(){
   if(!('serviceWorker' in navigator))return;
+  // SW更新时自动刷新页面，确保用户始终用最新版本
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(refreshing)return;
+    refreshing=true;
+    window.location.reload();
+  });
   navigator.serviceWorker.register('/meridian/sw.js',{scope:'/meridian/'})
     .then(reg=>{
       window._swReg=reg;console.log('SW已注册');
       const doSchedule=()=>{if(reg.active){reg.active.postMessage({type:'SCHEDULE'});console.log('已通知SW调度');}};
       if(reg.active)doSchedule();
-      navigator.serviceWorker.addEventListener('controllerchange',()=>{
-        if(navigator.serviceWorker.controller)navigator.serviceWorker.controller.postMessage({type:'SCHEDULE'});
+      // SW有更新时立即激活
+      reg.addEventListener('updatefound',()=>{
+        const newSW=reg.installing;
+        if(newSW){
+          newSW.addEventListener('statechange',()=>{
+            if(newSW.state==='installed'&&navigator.serviceWorker.controller){
+              newSW.postMessage({type:'SKIP_WAITING'});
+            }
+          });
+        }
       });
       setInterval(doSchedule,3600000);
     })
