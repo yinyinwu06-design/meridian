@@ -585,7 +585,12 @@ function sw(id){
   });
   if(id==='running')renderR();
   if(id==='auto')setTimeout(syncAutoPauseBtn,50);
-  try{localStorage.setItem('lastTab',id);}catch(e){}
+  // 用URL hash记录当前标签，比localStorage更可靠
+  try{
+    if(location.hash!=='#'+id){
+      history.replaceState(null,'','#'+id);
+    }
+  }catch(e){}
 }
 
 // Service Worker
@@ -615,14 +620,17 @@ function registerSW(){
     const savedSel=localStorage.getItem('customSel');
     if(savedSel){try{csel=JSON.parse(savedSel);renderCList();}catch(e){}}
   }catch(e){}
-  // 智能恢复标签（自选运行优先级高于子午流注暂停状态）
-  if(crun)sw('running');
-  else if(Object.keys(csel).length>0)sw('custom');
-  else{
-    sw('auto');
-    // 只有在子午流注页面时才恢复暂停状态
-    if(autoPaused){syncAutoPauseBtn();}
-  }
+  // 从URL hash恢复标签（最可靠的方式）
+  (function(){
+    let tab='auto';
+    const hash=location.hash.replace('#','');
+    if(['auto','custom','running'].includes(hash))tab=hash;
+    // 运行中任务优先
+    if(crun)tab='running';
+    // 运行中但没有任务，回到auto
+    else if(tab==='running')tab='auto';
+    sw(tab);
+  })();
   // 启动时钟
   renderCard();
   if(!autoPaused){autoTimer=setInterval(tickAuto,1000);tickAuto();}
