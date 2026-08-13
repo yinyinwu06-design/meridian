@@ -1,4 +1,4 @@
-const CACHE = 'jl-sw-v5';
+const CACHE = 'jl-sw-v6';
 const timers = [];
 
 // 12条经络数据
@@ -34,7 +34,7 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  return;
+  e.respondWith(fetch(e.request).catch(() => new Response('', {status: 200, statusText: 'OK'})));
 });
 
 // 点击通知打开页面
