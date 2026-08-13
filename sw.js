@@ -1,4 +1,4 @@
-const CACHE = 'jl-sw-v2';
+const CACHE = 'jl-sw-v3';
 const timers = [];
 
 // 12条经络数据
