@@ -33,6 +33,10 @@ self.addEventListener('activate', e => {
   );
 });
 
+self.addEventListener('fetch', e => {
+  return;
+});
+
 // 点击通知打开页面
 self.addEventListener('notificationclick', e => {
   e.notification.close();
