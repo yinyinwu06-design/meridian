@@ -182,7 +182,7 @@ html,body{min-height:100%;background:var(--s0);font-family:var(--font);color:var
   </div>
 </div>
 <div class="pg" id="page-running"><div id="rcontent"></div></div>
-<div class="version"><span class="version-name">玄师公众号 · 十二时辰经络运行助手</span><span class="version-num">v1.4</span></div>
+<div class="version"><span class="version-name">玄师公众号 · 十二时辰经络运行助手</span><span class="version-num">v1.5</span></div>
 </div>
 <script>
 const WX={
@@ -656,6 +656,43 @@ function registerSW(){
   if(typeof Notification!=='undefined'&&Notification.permission==='granted'){
     notifOK=true;setNotifOK();registerSW();
   }
+
+  // 页面从后台回到前台时，重新校准自选运行倒计时
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden){
+      // 页面可见时，如果自选运行中且没暂停，用系统时间重新校准
+      if(crun&&!paused&&cStartTime>0){
+        let elapsed=Math.floor((Date.now()-cStartTime)/1000);
+        let total=0;
+        // 计算已完成经络总时长
+        while(cidx<cq.length){
+          total=0;
+          for(let i=0;i<cidx;i++)total+=cq[i].dur;
+          const need=cq[cidx].dur-(elapsed-total);
+          if(need>0){
+            crem=need;
+            break;
+          } else {
+            // 当前经络时间已过，切换到下一条
+            cidx++;
+            if(cidx>=cq.length){
+              crun=false;
+              clearInterval(ctmr);
+              renderR();
+              return;
+            }
+          }
+        }
+        renderR();
+        tick();
+      }
+      // 子午流注也刷新一下
+      if(!autoPaused){
+        renderCard();
+        tickAuto();
+      }
+    }
+  });
 })();
 
 </script>
