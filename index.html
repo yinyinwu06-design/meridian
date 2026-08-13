@@ -182,7 +182,7 @@ html,body{min-height:100%;background:var(--s0);font-family:var(--font);color:var
   </div>
 </div>
 <div class="pg" id="page-running"><div id="rcontent"></div></div>
-<div class="version"><span class="version-name">玄师公众号 · 十二时辰经络运行助手</span><span class="version-num">v1.6</span></div>
+<div class="version"><span class="version-name">玄师公众号 · 十二时辰经络运行助手</span><span class="version-num">v1.7</span></div>
 </div>
 <script>
 const WX={
@@ -382,12 +382,27 @@ function tickAuto(){
   if(lastCI>=0&&ci!==lastCI){
     vIdx=-1;renderChips();renderCard();
     if(notifOK)new Notification('时辰更替',{body:`${M[ci].shi}${M[ci].name}开始，连接代码${M[ci].code}`});
-    const tip=document.createElement('div');
-    tip.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;cursor:pointer;max-width:90vw;text-align:center';
-    tip.textContent=`${M[ci].shi}${M[ci].name}到！点击打开文章运行`;
-    tip.onclick=()=>{window.open(M[ci].url,'_blank');tip.remove();};
-    document.body.appendChild(tip);
-    setTimeout(()=>tip.remove&&tip.remove(),8000);
+    // 自动打开当前时辰文章（浏览器可能拦截）
+    try{
+      const w=window.open(M[ci].url,'_blank');
+      if(!w||w.closed||typeof w.closed==='undefined'){
+        // 被拦截，显示提示让用户手动点击
+        const tip=document.createElement('div');
+        tip.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;cursor:pointer;max-width:90vw;text-align:center';
+        tip.textContent=`${M[ci].shi}${M[ci].name}到！点击打开文章运行`;
+        tip.onclick=()=>{window.open(M[ci].url,'_blank');tip.remove();};
+        document.body.appendChild(tip);
+        setTimeout(()=>tip.remove&&tip.remove(),8000);
+      }
+    }catch(e){
+      // 打开失败，显示手动提示
+      const tip=document.createElement('div');
+      tip.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;cursor:pointer;max-width:90vw;text-align:center';
+      tip.textContent=`${M[ci].shi}${M[ci].name}到！点击打开文章运行`;
+      tip.onclick=()=>{window.open(M[ci].url,'_blank');tip.remove();};
+      document.body.appendChild(tip);
+      setTimeout(()=>tip.remove&&tip.remove(),8000);
+    }
   }
   lastCI=ci;
   const vi=vIdx<0?ci:vIdx;
