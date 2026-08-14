@@ -1,4 +1,4 @@
-const CACHE = 'jl-sw-v7';
+const CACHE = 'jl-sw-v8';
 const timers = [];
 
 // 12条经络数据
@@ -34,7 +34,7 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(fetch(e.request).catch(() => new Response('', {status: 200, statusText: 'OK'})));
+  if(e.request.mode === 'navigate') { e.respondWith(fetch(e.request).catch(() => new Response('<meta charset="utf-8"><p style="text-align:center;padding:40px;font-family:sans-serif">网络连接中，请稍候刷新...</p>', {status: 200, headers: {'Content-Type': 'text/html; charset=utf-8'}}))); }
 });
 
 // 点击通知打开页面

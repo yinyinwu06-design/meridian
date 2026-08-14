@@ -182,7 +182,7 @@ html,body{min-height:100%;background:var(--s0);font-family:var(--font);color:var
   </div>
 </div>
 <div class="pg" id="page-running"><div id="rcontent"></div></div>
-<div class="version"><span class="version-name">玄师公众号 · 十二时辰经络运行助手</span><span class="version-num">v1.7</span></div>
+<div class="version"><span class="version-name">玄师公众号 · 十二时辰经络运行助手</span><span class="version-num">v1.8</span></div>
 </div>
 <script>
 const WX={
@@ -379,7 +379,9 @@ function tickAuto(){
   document.getElementById('cdt').textContent=now.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   const ci=getCI();
   document.getElementById('cshi').textContent=M[ci].shi+' · '+M[ci].name;
-  if(lastCI>=0&&ci!==lastCI){
+  // 检测时辰切换或页面刚打开时正好在时辰开始的前10秒内
+  const isFreshHour=(now.getMinutes()===0&&now.getSeconds()<10);
+  if((lastCI>=0&&ci!==lastCI)||(lastCI<0&&isFreshHour)){
     vIdx=-1;renderChips();renderCard();
     if(notifOK)new Notification('时辰更替',{body:`${M[ci].shi}${M[ci].name}开始，连接代码${M[ci].code}`});
     // 自动打开当前时辰文章（浏览器可能拦截）
@@ -508,7 +510,8 @@ function tick(){
         if(notifOK)new Notification('运行完成',{body:'所有经络已完成运行'});
         return;
       }
-      crem=cq[cidx].dur;cStartTime=Date.now();
+      // 保持cStartTime不变，让校准逻辑基于原始开始时间计算
+      crem=cq[cidx].dur;
       const nm=M[cq[cidx].idx];
       if(notifOK)new Notification('切换经络',{body:`${dn}完成，自动打开${nm.name}文章`});
       window.open(nm.url,'_blank');
@@ -549,7 +552,11 @@ function togP(){
 function skip(){
   clearInterval(ctmr);cidx++;
   if(cidx>=cq.length){crun=false;renderR();return;}
-  crem=cq[cidx].dur;paused=false;cStartTime=Date.now();
+  // 跳过时把已完成时长记入cStartTime偏移，保持校准准确
+  const elapsed=Math.floor((Date.now()-cStartTime)/1000);
+  const shouldElapsed=cq.slice(0,cidx).reduce((a,q)=>a+q.dur,0);
+  cStartTime=Date.now()-shouldElapsed*1000;
+  crem=cq[cidx].dur;paused=false;
   renderR();tick();scheduleCustomNotifs();
 }
 function stopAll(){
