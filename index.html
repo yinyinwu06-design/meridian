@@ -182,7 +182,7 @@ html,body{min-height:100%;background:var(--s0);font-family:var(--font);color:var
   </div>
 </div>
 <div class="pg" id="page-running"><div id="rcontent"></div></div>
-<div class="version"><span class="version-name">玄师公众号 · 十二时辰经络运行助手</span><span class="version-num">v1.8</span></div>
+<div class="version"><span class="version-name">玄师公众号 · 十二时辰经络运行助手</span><span class="version-num">v2.0</span></div>
 </div>
 <script>
 const WX={
@@ -371,6 +371,20 @@ function renderCard(idx){
     </div>`;
 }
 
+// 自动打开当前时辰文章（同一时辰只打开一次）
+function autoOpenCurrentArticle(){
+  const ci=getCI();
+  if(!M[ci]||!M[ci].url)return;
+  let opened=null;
+  try{opened=sessionStorage.getItem('autoOpenedCI');}catch(e){}
+  // 如果这个时辰已经自动打开过，不重复打开
+  if(opened===String(ci))return;
+  try{
+    window.open(M[ci].url,'_blank');
+    sessionStorage.setItem('autoOpenedCI',String(ci));
+  }catch(e){}
+}
+
 // 时钟
 function tickAuto(){
   if(autoPaused){syncAutoPauseBtn();return;}
@@ -379,32 +393,13 @@ function tickAuto(){
   document.getElementById('cdt').textContent=now.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   const ci=getCI();
   document.getElementById('cshi').textContent=M[ci].shi+' · '+M[ci].name;
-  // 检测时辰切换或页面刚打开时正好在时辰开始的前10秒内
-  const isFreshHour=(now.getMinutes()===0&&now.getSeconds()<10);
-  if((lastCI>=0&&ci!==lastCI)||(lastCI<0&&isFreshHour)){
+  // 检测时辰切换
+  if(lastCI>=0&&ci!==lastCI){
     vIdx=-1;renderChips();renderCard();
     if(notifOK)new Notification('时辰更替',{body:`${M[ci].shi}${M[ci].name}开始，连接代码${M[ci].code}`});
-    // 自动打开当前时辰文章（浏览器可能拦截）
-    try{
-      const w=window.open(M[ci].url,'_blank');
-      if(!w||w.closed||typeof w.closed==='undefined'){
-        // 被拦截，显示提示让用户手动点击
-        const tip=document.createElement('div');
-        tip.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;cursor:pointer;max-width:90vw;text-align:center';
-        tip.textContent=`${M[ci].shi}${M[ci].name}到！点击打开文章运行`;
-        tip.onclick=()=>{window.open(M[ci].url,'_blank');tip.remove();};
-        document.body.appendChild(tip);
-        setTimeout(()=>tip.remove&&tip.remove(),8000);
-      }
-    }catch(e){
-      // 打开失败，显示手动提示
-      const tip=document.createElement('div');
-      tip.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;cursor:pointer;max-width:90vw;text-align:center';
-      tip.textContent=`${M[ci].shi}${M[ci].name}到！点击打开文章运行`;
-      tip.onclick=()=>{window.open(M[ci].url,'_blank');tip.remove();};
-      document.body.appendChild(tip);
-      setTimeout(()=>tip.remove&&tip.remove(),8000);
-    }
+    // 时辰切换时清除自动打开记录，然后触发自动打开
+    try{sessionStorage.removeItem('autoOpenedCI');}catch(e){}
+    autoOpenCurrentArticle();
   }
   lastCI=ci;
   const vi=vIdx<0?ci:vIdx;
@@ -679,9 +674,11 @@ function registerSW(){
     notifOK=true;setNotifOK();registerSW();
   }
 
-  // 页面从后台回到前台时，重新校准自选运行倒计时
+  // 页面从后台回到前台时，重新校准 + 自动打开当前时辰文章
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden){
+      // 自动打开当前时辰对应的公众号文章（同一时辰只开一次）
+      if(!autoPaused)autoOpenCurrentArticle();
       // 页面可见时，如果自选运行中且没暂停，用系统时间重新校准
       if(crun&&!paused&&cStartTime>0){
         let elapsed=Math.floor((Date.now()-cStartTime)/1000);
